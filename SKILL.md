@@ -1,11 +1,11 @@
 ---
 name: vercel-github-actions-deploy
-description: Set up GitHub Actions to deploy any Vercel project using the Git Author Override method, enabling teammates to deploy on the free Hobby plan. Use when the user asks about Vercel deployment via GitHub Actions, CI/CD for Vercel, letting teammates deploy on Vercel free plan, bypassing Vercel's Hobby plan deploy restrictions, or automating Vercel production deploys. Covers workflow setup, GitHub Secrets configuration, and package manager variants (bun, npm, pnpm).
+description: "Set up GitHub Actions to deploy any Vercel project using the Git Author Override method, enabling teammates to deploy on the free Hobby plan. Use when the user asks about Vercel deployment via GitHub Actions, CI/CD for Vercel, letting teammates deploy on Vercel free plan, bypassing Vercel's Hobby plan deploy restrictions, or automating Vercel production deploys. Covers workflow setup, GitHub Secrets configuration, and package manager variants (bun, npm, pnpm)."
 license: MIT
 metadata:
-  author: itsOmSarraf
+  author: "itsOmSarraf"
   version: "1.0"
-  tags: [vercel, github-actions, ci-cd, deployment, free-plan]
+  tags: "vercel, github-actions, ci-cd, deployment, free-plan"
 ---
 
 # Vercel GitHub Actions Deploy (Git Author Override)
@@ -14,7 +14,7 @@ Deploy Vercel projects from GitHub Actions on the **free Hobby plan** — lettin
 
 ## The Problem
 
-Vercel's free plan ties deployments to the **account owner**. When a teammate pushes to `main`, Vercel checks the git commit author and rejects it. Normally requires Pro plan ($20/mo per member).
+Vercel's free plan ties deployments to the **account owner**. When a teammate pushes to `main`, Vercel checks the git commit author and rejects it. This normally requires the Pro plan ($20/mo per member).
 
 ## How It Works
 
@@ -23,92 +23,49 @@ Teammate pushes to main
         ↓
 GitHub Actions triggers
         ↓
-Rewrites commit author to account owner (on CI runner only)
+Rewrites commit author to account owner (on disposable CI runner only)
         ↓
 Vercel CLI builds and deploys to production
 ```
 
-- Runs on every push to `main` — by **anyone**
-- Manual deploy via GitHub Actions tab (`workflow_dispatch`)
+- Runs on every push to `main` — by **anyone**, plus manual dispatch
 - Actual repo history stays **untouched** (rewrite only on disposable runner)
-- Works on the **free Vercel plan**
 
-## User Action Required — What You Need Before Starting
+## Prerequisites (User Action Required)
 
-This skill generates the workflow file automatically, but **you must provide 5 values** that only you have access to. The AI assistant **cannot** obtain these for you.
+The assistant creates the workflow YAML, but the user **must provide these 5 secrets** — the assistant cannot obtain them.
 
-### Checklist: Things You Must Do Manually
-
-| # | Action | Where to Do It | What You Get |
-|---|--------|----------------|--------------|
-| 1 | **Create a Vercel deploy token** | Go to [vercel.com/account/tokens](https://vercel.com/account/tokens) → Create Token → Copy it | `VERCEL_TOKEN` |
-| 2 | **Link your project to Vercel** | Run `npx vercel link` in your project root (follow prompts) | Creates `.vercel/project.json` |
-| 3 | **Copy Org ID and Project ID** | Open `.vercel/project.json` → copy `orgId` and `projectId` values | `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
-| 4 | **Know the Vercel account owner's identity** | The email and name on the Vercel account that owns the project | `DEPLOY_EMAIL`, `DEPLOY_NAME` |
-| 5 | **Add all 5 secrets to GitHub** | Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret** | Secrets stored in GitHub |
-
-**IMPORTANT:** The AI assistant will create the workflow YAML file for you, but it **cannot** create the Vercel token, link your project, or add GitHub secrets — you must do steps 1-5 yourself.
-
-### The 5 Required GitHub Secrets
-
-Add each of these at: `https://github.com/<owner>/<repo>/settings/secrets/actions`
-
-| Secret Name | Where to Get It | Example Value |
-|-------------|-----------------|---------------|
-| `VERCEL_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) → Create Token | `pZt7x...` (long string) |
-| `VERCEL_ORG_ID` | `.vercel/project.json` → `"orgId"` field | `team_aBcDeFgHiJkLmN` |
-| `VERCEL_PROJECT_ID` | `.vercel/project.json` → `"projectId"` field | `prj_xYzAbCdEfGhIjK` |
-| `DEPLOY_EMAIL` | Email of the person who owns the Vercel project | `owner@example.com` |
-| `DEPLOY_NAME` | Display name of the Vercel project owner | `Om Sarraf` |
-
-### How to Get the Org ID and Project ID
+**Step 1 — Link project and create token:**
 
 ```bash
-# Step 1: Install Vercel CLI (if not installed)
 npm install -g vercel
-
-# Step 2: Link your project
-npx vercel link
-# → Follow prompts: select scope, link to existing project or create new
-
-# Step 3: A file is created at .vercel/project.json
-# It looks like this:
-# {
-#   "orgId": "team_aBcDeFgHiJkLmN",
-#   "projectId": "prj_xYzAbCdEfGhIjK"
-# }
-
-# Step 4: Make sure .vercel is gitignored
+npx vercel link          # creates .vercel/project.json with orgId + projectId
 echo ".vercel" >> .gitignore
 ```
 
-## Quick Start (5 min)
+Then create a deploy token at [vercel.com/account/tokens](https://vercel.com/account/tokens).
 
-Once you have all 5 secrets ready, setup takes under 5 minutes.
+**Step 2 — Add all 5 as GitHub repository secrets** (Settings → Secrets and variables → Actions):
 
-### Step 1: Pick your workflow
+| Secret Name | Source |
+|-------------|--------|
+| `VERCEL_TOKEN` | Token from vercel.com/account/tokens |
+| `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` |
+| `VERCEL_PROJECT_ID` | `projectId` in `.vercel/project.json` |
+| `DEPLOY_EMAIL` | Email of the Vercel account owner |
+| `DEPLOY_NAME` | Display name of the Vercel account owner |
 
-Choose based on your package manager:
+## Setup
+
+### 1. Pick the workflow for the project's package manager
 
 - **Bun** (has `bun.lock`) → `examples/deploy-bun.yml`
 - **npm** (has `package-lock.json`) → `examples/deploy-npm.yml`
 - **pnpm** (has `pnpm-lock.yaml`) → `examples/deploy-pnpm.yml`
 
-Copy the chosen file to `.github/workflows/deploy.yml` in your repo.
+Copy the chosen file to `.github/workflows/deploy.yml`.
 
-### Step 2: Add your 5 GitHub Secrets
-
-**(You must do this manually — see "User Action Required" above)**
-
-Go to `https://github.com/<owner>/<repo>/settings/secrets/actions` and add:
-
-1. `VERCEL_TOKEN`
-2. `VERCEL_ORG_ID`
-3. `VERCEL_PROJECT_ID`
-4. `DEPLOY_EMAIL`
-5. `DEPLOY_NAME`
-
-### Step 3: Push and deploy
+### 2. Commit and push
 
 ```bash
 git add .github/workflows/deploy.yml
@@ -116,7 +73,16 @@ git commit -m "ci: add Vercel deploy workflow"
 git push origin main
 ```
 
-Watch it deploy in the **Actions** tab of your GitHub repo.
+### 3. Verify the deployment
+
+1. Open the repo's **Actions** tab — confirm the workflow run shows a green check
+2. Click the run → check the "Deploy to Vercel" step logged a production URL
+3. Visit the logged URL and confirm the site is live
+
+**If the run fails**, check these common causes:
+- `VERCEL_TOKEN is not set` → GitHub Secrets are case-sensitive; verify the name is exactly `VERCEL_TOKEN`
+- Build fails in CI but works locally → ensure all env vars exist in the Vercel dashboard (Settings → Environment Variables); `vercel pull` fetches them automatically but they must be configured first
+- `Error: No commits found` → ensure the checkout step uses default `fetch-depth` (1 is fine)
 
 ## Workflow Template (Bun)
 
@@ -163,61 +129,20 @@ jobs:
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
-**Using npm?** Remove the Bun step.
-**Using pnpm?** Replace the Bun step with `uses: pnpm/action-setup@v4`.
-
-See `examples/` for ready-to-use workflow files for each package manager.
+**Using npm?** Remove the Bun step. **Using pnpm?** Replace it with `uses: pnpm/action-setup@v4`. See `examples/` for ready-to-use files.
 
 ## Preventing Double Deploys
 
-If the account owner pushes, both Vercel's Git integration and GitHub Actions will deploy. To avoid this:
-
-1. Go to **Vercel Dashboard** → your project → **Settings** → **Git**
-2. Set **Ignored Build Step** command to: `exit 0`
-3. Click **Save**
-
-This disables Vercel's built-in Git deploys and lets GitHub Actions handle everything.
-
-**(This is a manual step in the Vercel dashboard — the AI assistant cannot do this for you.)**
+If the account owner pushes, both Vercel's Git integration and GitHub Actions deploy simultaneously. To prevent this, set **Ignored Build Step** to `exit 0` in Vercel Dashboard → Project Settings → Git. This is a manual step in the Vercel dashboard.
 
 ## Preview Deploys for PRs
 
-To deploy previews on pull requests, change the trigger and remove `--prod`:
-
-```yaml
-on:
-  pull_request:
-    branches: [main]
-
-# In the build step:
-- run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-
-# In the deploy step:
-- run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-```
-
-## Environment Variables
-
-`vercel pull` fetches all env vars from your Vercel project automatically. No need to duplicate them in GitHub Secrets.
-
-**Note:** Your project's env vars must already be configured in the Vercel dashboard. If you haven't added them yet, go to: **Vercel Dashboard** → your project → **Settings** → **Environment Variables**.
+Change the trigger to `pull_request` and remove `--prod` from build/deploy steps. See [templates/deploy-workflow-template.md](templates/deploy-workflow-template.md) for a full preview workflow with PR comment integration.
 
 ## FAQ
 
-**Does the author override mess with my git history?**
-No. The rewrite only happens inside the disposable GitHub Actions runner. Your actual repo commits are untouched.
-
 **Does this work with monorepos?**
-Yes. Make sure `vercel link` points to the correct project. See [templates/deploy-workflow-template.md](templates/deploy-workflow-template.md#monorepo-support) for multi-project setup.
-
-**What about environment variables?**
-`vercel pull` fetches all env vars from your Vercel project automatically — but they must exist in the Vercel dashboard first.
-
-**The deploy worked but my site didn't update?**
-You might have Vercel's Git integration also deploying (race condition). Set **Ignored Build Step** to `exit 0` in Vercel project settings.
-
-**I'm getting "VERCEL_TOKEN is not set"?**
-GitHub Secrets are case-sensitive. Make sure the name is exactly `VERCEL_TOKEN`, not `vercel_token` or `Vercel_Token`.
+Yes. Ensure `vercel link` points to the correct project. See [templates/deploy-workflow-template.md](templates/deploy-workflow-template.md#monorepo-support) for multi-project setup.
 
 ## Additional Resources
 
@@ -225,4 +150,3 @@ GitHub Secrets are case-sensitive. Make sure the name is exactly `VERCEL_TOKEN`,
 - Ready-to-use workflow files: [examples/](examples/)
 - Vercel CLI docs: https://vercel.com/docs/cli
 - GitHub Actions docs: https://docs.github.com/en/actions
-- Vercel tokens page: https://vercel.com/account/tokens
